@@ -1,0 +1,17 @@
+{
+  "name": "Lora Tracker",
+  "short_name": "Lora Tracker",
+  "description": "Daily task tracking with local storage, zero servers.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff5fa",
+  "theme_color": "#ff2d8f",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

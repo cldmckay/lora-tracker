@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ff2d8f" />
+    <title>Lora Tracker</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
+          ☰
+        </button>
+        <div class="topbar-title">
+          <span class="topbar-emoji" id="appEmojiTop">💗</span>
+          <span id="appNameHeader">Lora Tracker</span>
+        </div>
+      </header>
+      <nav class="menu" id="menu" aria-hidden="true">
+        <button type="button" class="menu-item" data-panel="checklist">
+          Checklist
+        </button>
+        <button type="button" class="menu-item" data-panel="settings">
+          Settings
+        </button>
+        <button type="button" class="menu-item" data-panel="calendar">
+          Calendar
+        </button>
+      </nav>
+
+      <header class="hero">
+        <div class="hero-badge" id="appEmojiBadge">💖</div>
+        <div class="hero-copy">
+          <p class="eyebrow">CHALLENGE ACCEPTED</p>
+          <h1 id="appNameHeading">Lora Tracker</h1>
+          <p class="subtitle" id="encouragementText"></p>
+        </div>
+        <div class="hero-pill" id="dateNav" aria-label="Date navigation">
+          <div class="date-nav">
+            <button type="button" id="prevDay" aria-label="Previous day">←</button>
+            <div id="todayLabel"></div>
+            <button type="button" id="nextDay" aria-label="Next day">→</button>
+          </div>
+          <button type="button" class="go-today" id="goToday">Go to today</button>
+        </div>
+      </header>
+
+      <section
+        class="panel today"
+        id="todayPanel"
+        aria-labelledby="today-heading"
+      >
+        <div class="panel-head">
+          <div>
+            <h2 id="today-heading">Today&apos;s Checklist</h2>
+            <p class="muted">Tap a box to mark it done. Tap again to undo.</p>
+          </div>
+          <div class="today-summary" id="todaySummary"></div>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <section
+        class="panel settings"
+        id="settingsPanel"
+        aria-labelledby="settings-heading"
+        hidden
+      >
+        <div class="panel-head">
+          <div>
+            <h2 id="settings-heading">Settings</h2>
+            <p class="muted">
+              Personalize the name, theme, and your task list.
+            </p>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <label class="setting-field">
+            <span>App name</span>
+            <input id="appNameInput" type="text" maxlength="40" />
+          </label>
+          <label class="setting-field">
+            <span>Base color</span>
+            <input id="themeColorInput" type="color" />
+          </label>
+          <label class="setting-field">
+            <span>App emoji</span>
+            <select id="appEmojiInput"></select>
+          </label>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="panel-head">
+          <div>
+            <h3>Task Settings</h3>
+            <p class="muted">
+              Add new rituals or remove old ones. Removed tasks stay saved
+              for history.
+            </p>
+          </div>
+        </div>
+        <form class="task-form" id="taskForm">
+          <label class="emoji-select">
+            <span>Emoji</span>
+            <select id="taskEmoji" aria-label="Task emoji"></select>
+          </label>
+          <label class="type-select">
+            <span>Type</span>
+            <select id="taskType" aria-label="Task type">
+              <option value="checkbox">Checkbox</option>
+              <option value="goal">Goal Number</option>
+              <option value="checkbox-text">Checkbox + Text</option>
+            </select>
+          </label>
+          <label class="goal-input" id="taskGoalWrap" hidden>
+            <span>Goal</span>
+            <input id="taskGoal" type="number" min="0" step="1" />
+          </label>
+          <input
+            id="taskInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Add a daily task"
+            maxlength="60"
+            required
+          />
+          <button type="submit">Add Task</button>
+        </form>
+        <div class="task-manage">
+          <div class="task-column">
+            <h3>Active Tasks</h3>
+            <div class="task-stack" id="activeTasks"></div>
+          </div>
+          <div class="task-column">
+            <h3>Archived Tasks</h3>
+            <div class="task-stack" id="archivedTasks"></div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="panel calendar"
+        id="calendarPanel"
+        aria-labelledby="calendar-heading"
+        hidden
+      >
+        <div class="panel-head calendar-head">
+          <div>
+            <h2 id="calendar-heading">Calendar Pulse 📅</h2>
+            <p class="muted">
+              Default view shows daily totals. Filter by a task to see streaks.
+            </p>
+          </div>
+          <div class="calendar-controls">
+            <div class="month-nav">
+              <button type="button" id="prevMonth" aria-label="Previous month">
+                ←
+              </button>
+              <div class="month-label" id="monthLabel"></div>
+              <button type="button" id="nextMonth" aria-label="Next month">
+                →
+              </button>
+            </div>
+            <label class="filter">
+              <span>Task view</span>
+              <select id="taskFilter"></select>
+            </label>
+          </div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="calendar-legend" id="calendarLegend"></div>
+        <div class="monthly-totals" id="monthlyTotals"></div>
+      </section>
+
+      <footer class="footer">
+        <span><span id="appEmojiFooter">💗</span> Data lives only in your browser (localStorage).</span>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

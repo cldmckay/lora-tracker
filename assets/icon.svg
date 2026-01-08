@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lora Tracker">
+  <defs>
+    <linearGradient id="pink" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff2d8f" />
+      <stop offset="100%" stop-color="#ff8fc7" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#pink)" />
+  <path
+    d="M256 366c-60-44-108-88-108-140 0-40 26-70 66-70 20 0 36 9 42 21 6-12 22-21 42-21 40 0 66 30 66 70 0 52-48 96-108 140z"
+    fill="#fff"
+    opacity="0.9"
+  />
+  <text
+    x="256"
+    y="270"
+    text-anchor="middle"
+    font-size="120"
+    font-family="Cooper Black, Georgia, serif"
+    fill="#2c102f"
+  >
+    LT
+  </text>
+</svg>
