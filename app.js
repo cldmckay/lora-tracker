@@ -567,7 +567,7 @@ function updateAppIcon(settings) {
     );
     return;
   }
-  dom.appIcon.setAttribute("href", "assets/icon.svg");
+  dom.appIcon.setAttribute("href", "assets/icon.png");
 }
 
 function updateManifest(settings) {
