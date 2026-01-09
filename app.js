@@ -3,6 +3,7 @@ const STORAGE_KEYS = {
   daily: "lora.daily",
   seq: "lora.taskSeq",
   settings: "lora.settings",
+  onboarding: "lora.onboarding",
 };
 
 const INITIAL_TASKS = [
@@ -45,12 +46,27 @@ const state = {
   monthDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   selectedTaskId: null,
   activePanel: "checklist",
+  onboardingView: null,
 };
 
 const dom = {
   menuToggle: document.getElementById("menuToggle"),
   menu: document.getElementById("menu"),
   menuItems: Array.from(document.querySelectorAll(".menu-item")),
+  appIcon: document.getElementById("appIcon"),
+  appManifest: document.getElementById("appManifest"),
+  topbar: document.querySelector(".topbar"),
+  hero: document.querySelector(".hero"),
+  footer: document.querySelector(".footer"),
+  setupChoicePanel: document.getElementById("setupChoicePanel"),
+  setupPanel: document.getElementById("setupPanel"),
+  setupScratch: document.getElementById("setupScratch"),
+  setupLora: document.getElementById("setupLora"),
+  setupSubmit: document.getElementById("setupSubmit"),
+  setupAppName: document.getElementById("setupAppName"),
+  setupThemeColor: document.getElementById("setupThemeColor"),
+  setupThemePreview: document.getElementById("setupThemePreview"),
+  setupEmoji: document.getElementById("setupEmoji"),
   todayPanel: document.getElementById("todayPanel"),
   settingsPanel: document.getElementById("settingsPanel"),
   calendarPanel: document.getElementById("calendarPanel"),
@@ -58,10 +74,12 @@ const dom = {
   appNameHeading: document.getElementById("appNameHeading"),
   appNameInput: document.getElementById("appNameInput"),
   themeColorInput: document.getElementById("themeColorInput"),
+  themeColorPreview: document.getElementById("themeColorPreview"),
   appEmojiInput: document.getElementById("appEmojiInput"),
   appEmojiTop: document.getElementById("appEmojiTop"),
   appEmojiBadge: document.getElementById("appEmojiBadge"),
   appEmojiFooter: document.getElementById("appEmojiFooter"),
+  resetAppData: document.getElementById("resetAppData"),
   todayLabel: document.getElementById("todayLabel"),
   prevDay: document.getElementById("prevDay"),
   nextDay: document.getElementById("nextDay"),
@@ -108,6 +126,26 @@ const encouragements = [
   "You are stronger than the scroll, choose the task.",
   "Progress is the vibe, tap a box and claim it.",
   "Every checkmark is a vote for the life you want.",
+  "Start small, finish strong, and own the day.",
+  "Your streak has a heartbeat, keep it pumping.",
+  "Momentum loves a tiny yes, give it one.",
+  "You are closer than you think, check it off.",
+  "One task now saves you a hundred later.",
+  "Show up for five minutes and let it snowball.",
+  "The win is in the doing, not the drama.",
+  "Make it easy on future you, complete one.",
+  "Small steps, loud results, keep moving.",
+  "Checklists are magic when you believe in them.",
+  "Let today be simple and still count.",
+  "A single checkmark can flip your whole mood.",
+  "Do the next right thing and watch it add up.",
+  "Your goals are listening, give them a signal.",
+  "Easy days are made by steady habits.",
+  "You are the kind of person who finishes.",
+  "Keep the promise you made to yourself today.",
+  "You have what it takes, just take the box.",
+  "Every task is a doorway, walk through one.",
+  "Give today a win, then stack another.",
 ];
 
 const APP_EMOJI_OPTIONS = [
@@ -243,6 +281,14 @@ function hasValue(value) {
   return value !== "" && value !== null && value !== undefined;
 }
 
+function formatNumber(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "";
+  }
+  return new Intl.NumberFormat(undefined).format(numeric);
+}
+
 function getTaskEntry(task, record) {
   const raw = record?.entries?.[task.id];
   const type = getTaskType(task);
@@ -250,72 +296,76 @@ function getTaskEntry(task, record) {
 
   if (raw && typeof raw === "object") {
     const value = raw.value ?? "";
+    const open = Boolean(raw.open);
+    const rawChecked =
+      typeof raw.checked === "boolean" ? raw.checked : undefined;
     if (type === TASK_TYPES.goal) {
       if (!hasValue(value)) {
-        return { checked: false, value: "" };
+        return { checked: rawChecked ?? false, value: "", open };
       }
       const numeric = Number(value);
       if (Number.isFinite(numeric)) {
-        return { checked: numeric >= goal, value: numeric };
+        const checked = rawChecked ?? numeric >= goal;
+        return { checked, value: numeric, open };
       }
-      return { checked: false, value: "" };
+      return { checked: rawChecked ?? false, value: "", open };
     }
     if (type === TASK_TYPES.checkboxText) {
       const checked = Boolean(raw.checked);
-      return { checked, value: typeof value === "string" ? value : "" };
+      return { checked, value: typeof value === "string" ? value : "", open };
     }
     const checked = Boolean(raw.checked);
-    return { checked, value: "" };
+    return { checked, value: "", open };
   }
 
   if (typeof raw === "boolean") {
     if (type === TASK_TYPES.goal) {
-      return raw ? { checked: true, value: goal } : { checked: false, value: "" };
+      return raw
+        ? { checked: true, value: goal, open: false }
+        : { checked: false, value: "", open: false };
     }
-    return { checked: raw, value: "" };
+    return { checked: raw, value: "", open: false };
   }
 
   if (typeof raw === "number") {
     if (type === TASK_TYPES.goal) {
-      return { checked: raw >= goal, value: raw };
+      return { checked: raw >= goal, value: raw, open: false };
     }
-    return { checked: Boolean(raw), value: "" };
+    return { checked: Boolean(raw), value: "", open: false };
   }
 
-  return { checked: false, value: "" };
+  return { checked: false, value: "", open: false };
 }
 
-function buildTaskEntry(task, checked, value) {
+function buildTaskEntry(task, checked, value, open = false) {
   const type = getTaskType(task);
-  const goal = getTaskGoal(task);
 
   if (type === TASK_TYPES.goal) {
     if (!hasValue(value)) {
-      return { checked: false, value: "" };
+      return { checked: Boolean(checked), value: "", open: Boolean(open) };
     }
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) {
-      return { checked: false, value: "" };
+      return { checked: Boolean(checked), value: "", open: Boolean(open) };
     }
-    return { checked: numeric >= goal, value: numeric };
+    return { checked: Boolean(checked), value: numeric, open: Boolean(open) };
   }
 
   if (type === TASK_TYPES.checkboxText) {
     return {
       checked: Boolean(checked),
       value: typeof value === "string" ? value : "",
+      open: Boolean(open),
     };
   }
 
-  return { checked: Boolean(checked), value: "" };
+  return { checked: Boolean(checked), value: "", open: Boolean(open) };
 }
 
 function isTaskComplete(task, entry) {
   const type = getTaskType(task);
   if (type === TASK_TYPES.goal) {
-    const goal = getTaskGoal(task);
-    const numeric = Number(entry.value);
-    return Number.isFinite(numeric) && numeric >= goal;
+    return Boolean(entry.checked);
   }
   return Boolean(entry.checked);
 }
@@ -340,6 +390,23 @@ function loadJson(key, fallback) {
 
 function saveJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function loadOnboarding() {
+  const stored = loadJson(STORAGE_KEYS.onboarding, null);
+  return stored && typeof stored === "object" ? stored : null;
+}
+
+function saveOnboarding(mode) {
+  saveJson(STORAGE_KEYS.onboarding, { completed: true, mode });
+}
+
+function hasStoredData() {
+  return (
+    localStorage.getItem(STORAGE_KEYS.tasks) ||
+    localStorage.getItem(STORAGE_KEYS.settings) ||
+    localStorage.getItem(STORAGE_KEYS.daily)
+  );
 }
 
 function loadSettings() {
@@ -478,9 +545,72 @@ function applyThemeColor(color) {
   }
 }
 
+function buildCheckIconSvg(color) {
+  const safeColor = normalizeHex(color);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lora Tracker">
+  <rect width="512" height="512" rx="120" fill="${safeColor}" />
+  <path d="M154 268l70 70 134-134" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
+</svg>`;
+}
+
+function updateAppIcon(settings) {
+  if (!dom.appIcon) {
+    return;
+  }
+  const onboarding = loadOnboarding();
+  if (onboarding?.mode === "scratch") {
+    const svg = buildCheckIconSvg(settings.themeColor);
+    const encoded = encodeURIComponent(svg);
+    dom.appIcon.setAttribute(
+      "href",
+      `data:image/svg+xml;charset=UTF-8,${encoded}`
+    );
+    return;
+  }
+  dom.appIcon.setAttribute("href", "assets/icon.svg");
+}
+
+function updateManifest(settings) {
+  if (!dom.appManifest) {
+    return;
+  }
+  const safeName = settings.appName?.trim() || DEFAULT_SETTINGS.appName;
+  const safeTheme = normalizeHex(settings.themeColor);
+  const onboarding = loadOnboarding();
+  let iconSrc = "assets/icon.svg";
+  if (onboarding?.mode === "scratch") {
+    const svg = buildCheckIconSvg(safeTheme);
+    const encodedSvg = encodeURIComponent(svg);
+    iconSrc = `data:image/svg+xml;charset=UTF-8,${encodedSvg}`;
+  }
+  const manifest = {
+    name: safeName,
+    short_name: safeName,
+    description: "Daily task tracking with local storage, zero servers.",
+    start_url: ".",
+    display: "standalone",
+    background_color: adjustLightness(safeTheme, 60),
+    theme_color: safeTheme,
+    icons: [
+      {
+        src: iconSrc,
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any maskable",
+      },
+    ],
+  };
+  const encoded = encodeURIComponent(JSON.stringify(manifest));
+  dom.appManifest.setAttribute(
+    "href",
+    `data:application/manifest+json;charset=UTF-8,${encoded}`
+  );
+}
+
 function applySettings(settings) {
   const safeName = settings.appName?.trim() || DEFAULT_SETTINGS.appName;
   const safeEmoji = settings.appEmoji || DEFAULT_SETTINGS.appEmoji;
+  const safeTheme = normalizeHex(settings.themeColor);
   dom.appNameHeader.textContent = safeName;
   dom.appNameHeading.textContent = safeName;
   document.title = safeName;
@@ -488,7 +618,10 @@ function applySettings(settings) {
     dom.appNameInput.value = safeName;
   }
   if (dom.themeColorInput) {
-    dom.themeColorInput.value = normalizeHex(settings.themeColor);
+    dom.themeColorInput.value = safeTheme;
+  }
+  if (dom.themeColorPreview) {
+    dom.themeColorPreview.style.background = safeTheme;
   }
   setupEmojiSelect(dom.appEmojiInput, safeEmoji);
   if (dom.appEmojiTop) {
@@ -500,7 +633,9 @@ function applySettings(settings) {
   if (dom.appEmojiFooter) {
     dom.appEmojiFooter.textContent = safeEmoji;
   }
-  applyThemeColor(settings.themeColor);
+  applyThemeColor(safeTheme);
+  updateAppIcon({ ...settings, themeColor: safeTheme });
+  updateManifest({ ...settings, themeColor: safeTheme });
 }
 
 function updateSettings(patch) {
@@ -708,6 +843,7 @@ function renderToday() {
     ? record.activeTaskIds
     : getActiveTaskIds(tasks);
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
+  const displayIds = activeIds.filter((taskId) => tasksById.has(taskId));
 
   dom.todayLabel.textContent = state.viewDate.toLocaleDateString(undefined, {
     weekday: "long",
@@ -719,7 +855,31 @@ function renderToday() {
   }
 
   dom.taskList.innerHTML = "";
-  activeIds.forEach((taskId) => {
+  if (!displayIds.length) {
+    const emptyState = document.createElement("div");
+    emptyState.className = "empty-state";
+
+    const message = document.createElement("p");
+    message.className = "muted";
+    message.textContent = "No daily tasks yet. Add daily tasks in the Settings menu.";
+
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "task-button alt";
+    action.textContent = "Open Settings";
+    action.addEventListener("click", () => {
+      setActivePanel("settings");
+      setMenuOpen(false);
+      renderTaskManager();
+    });
+
+    emptyState.append(message, action);
+    dom.taskList.appendChild(emptyState);
+    renderTodaySummary();
+    return;
+  }
+
+  displayIds.forEach((taskId) => {
     const task = tasksById.get(taskId);
     if (!task) {
       return;
@@ -736,12 +896,17 @@ function renderToday() {
     input.className = "task-toggle";
     input.id = toggleId;
     input.setAttribute("aria-label", `Mark ${task.title} as complete`);
-    input.checked = isTaskComplete(task, entry);
+    input.checked =
+      type === TASK_TYPES.goal ? Boolean(entry.checked) : isTaskComplete(task, entry);
 
     const check = document.createElement("label");
     check.className = "task-check";
     check.setAttribute("for", toggleId);
     check.setAttribute("aria-hidden", "true");
+    let allowUncheck = false;
+    check.addEventListener("click", () => {
+      allowUncheck = true;
+    });
 
     const body = document.createElement("div");
     body.className = "task-body";
@@ -761,13 +926,13 @@ function renderToday() {
 
     const inputWrap = document.createElement("label");
     inputWrap.className = "task-input";
-
     const entryInput = document.createElement("input");
     if (type === TASK_TYPES.goal) {
       entryInput.type = "number";
       entryInput.min = "0";
       entryInput.step = "1";
       entryInput.setAttribute("aria-label", `${task.title} number`);
+      entryInput.placeholder = formatNumber(getTaskGoal(task));
       if (hasValue(entry.value)) {
         entryInput.value = entry.value;
       }
@@ -775,7 +940,6 @@ function renderToday() {
       entryInput.type = "text";
       entryInput.value = typeof entry.value === "string" ? entry.value : "";
     }
-
     inputWrap.append(entryInput);
 
     const updateDetail = (nextEntry) => {
@@ -792,11 +956,16 @@ function renderToday() {
     const updateEntry = (nextEntry) => {
       entry = nextEntry;
       updateDayEntry(viewDateKey, task, nextEntry, tasks);
-      input.checked = isTaskComplete(task, nextEntry);
+      input.checked =
+        type === TASK_TYPES.goal
+          ? Boolean(nextEntry.checked)
+          : isTaskComplete(task, nextEntry);
       title.textContent = task.title;
       if (type !== TASK_TYPES.checkbox) {
-        const showInput =
-          hasValue(nextEntry.value) || Boolean(nextEntry.checked);
+        let showInput = hasValue(nextEntry.value) || Boolean(nextEntry.checked);
+        if (type === TASK_TYPES.goal) {
+          showInput = Boolean(nextEntry.open) || hasValue(nextEntry.value);
+        }
         inputWrap.hidden = !showInput;
       }
       updateDetail(nextEntry);
@@ -808,11 +977,25 @@ function renderToday() {
 
     if (type === TASK_TYPES.checkbox) {
       inputWrap.hidden = true;
+    } else if (type === TASK_TYPES.goal) {
+      inputWrap.hidden = !(entry.open || hasValue(entry.value));
     } else {
       inputWrap.hidden = !(hasValue(entry.value) || Boolean(entry.checked));
     }
 
+    input.addEventListener("keydown", (event) => {
+      if (event.key === " " || event.key === "Enter") {
+        allowUncheck = true;
+      }
+    });
+
     input.addEventListener("change", () => {
+      const canUncheck = allowUncheck;
+      allowUncheck = false;
+      if (!input.checked && !canUncheck) {
+        input.checked = true;
+        return;
+      }
       if (type === TASK_TYPES.goal) {
         if (input.checked) {
           const goalValue = getTaskGoal(task) || 1;
@@ -823,10 +1006,10 @@ function renderToday() {
             numericValue < goalValue;
           const nextValue = useGoalDefault ? goalValue : numericValue;
           entryInput.value = nextValue;
-          updateEntry(buildTaskEntry(task, true, nextValue));
+          updateEntry(buildTaskEntry(task, true, nextValue, true));
         } else {
           entryInput.value = "";
-          updateEntry(buildTaskEntry(task, false, ""));
+          updateEntry(buildTaskEntry(task, false, "", false));
         }
         return;
       }
@@ -846,7 +1029,7 @@ function renderToday() {
 
     if (type === TASK_TYPES.goal) {
       entryInput.addEventListener("input", () => {
-        updateEntry(buildTaskEntry(task, true, entryInput.value));
+        updateEntry(buildTaskEntry(task, entry.checked, entryInput.value, true));
       });
     }
 
@@ -873,9 +1056,15 @@ function renderTodaySummary() {
   const viewDateKey = getViewDateKey();
   const daily = loadDaily();
   const record = daily[viewDateKey];
-  const activeIds = record?.activeTaskIds || getActiveTaskIds(tasks);
-  const total = activeIds.length;
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
+  const activeIds = (record?.activeTaskIds || getActiveTaskIds(tasks)).filter(
+    (id) => tasksById.has(id)
+  );
+  const total = activeIds.length;
+  if (!total) {
+    dom.todaySummary.textContent = "No tasks yet";
+    return;
+  }
   const completed = activeIds.reduce((sum, id) => {
     const task = tasksById.get(id);
     if (!task) {
@@ -1038,7 +1227,96 @@ function setMenuOpen(open) {
   document.body.setAttribute("data-menu-open", open ? "true" : "false");
 }
 
+function setOnboardingView(view) {
+  state.onboardingView = view;
+  const isOnboarding = Boolean(view);
+  if (dom.setupChoicePanel) {
+    dom.setupChoicePanel.hidden = view !== "choice";
+  }
+  if (dom.setupPanel) {
+    dom.setupPanel.hidden = view !== "setup";
+  }
+  if (dom.topbar) {
+    dom.topbar.hidden = isOnboarding;
+  }
+  if (dom.menu) {
+    dom.menu.hidden = isOnboarding;
+  }
+  if (dom.hero) {
+    dom.hero.hidden = isOnboarding;
+  }
+  if (dom.footer) {
+    dom.footer.hidden = isOnboarding;
+  }
+  if (dom.dateNav) {
+    dom.dateNav.hidden = isOnboarding || state.activePanel !== "checklist";
+  }
+  if (dom.todayPanel) {
+    dom.todayPanel.hidden = isOnboarding || state.activePanel !== "checklist";
+  }
+  if (dom.settingsPanel) {
+    dom.settingsPanel.hidden = isOnboarding || state.activePanel !== "settings";
+  }
+  if (dom.calendarPanel) {
+    dom.calendarPanel.hidden = isOnboarding || state.activePanel !== "calendar";
+  }
+  if (isOnboarding) {
+    setMenuOpen(false);
+  }
+}
+
+function populateSetupForm(settings) {
+  if (dom.setupAppName) {
+    dom.setupAppName.value = settings.appName || DEFAULT_SETTINGS.appName;
+  }
+  if (dom.setupThemeColor) {
+    dom.setupThemeColor.value = normalizeHex(settings.themeColor);
+  }
+  if (dom.setupThemePreview) {
+    dom.setupThemePreview.style.background = normalizeHex(settings.themeColor);
+  }
+  setupEmojiSelect(dom.setupEmoji, settings.appEmoji || DEFAULT_SETTINGS.appEmoji);
+}
+
+function handleSetupScratch() {
+  populateSetupForm(loadSettings());
+  setOnboardingView("setup");
+}
+
+function handleSetupLora() {
+  saveOnboarding("lora");
+  const settings = loadSettings();
+  saveSettings(settings);
+  seedTasks();
+  applySettings(settings);
+  setOnboardingView(null);
+  renderAll();
+}
+
+function handleSetupThemeColor(event) {
+  if (dom.setupThemePreview) {
+    dom.setupThemePreview.style.background = normalizeHex(event.target.value);
+  }
+}
+
+function handleSetupSubmit() {
+  const settings = {
+    appName:
+      dom.setupAppName?.value.trim() || DEFAULT_SETTINGS.appName,
+    themeColor: normalizeHex(dom.setupThemeColor?.value),
+    appEmoji: dom.setupEmoji?.value || DEFAULT_SETTINGS.appEmoji,
+  };
+  saveSettings(settings);
+  saveOnboarding("scratch");
+  applySettings(settings);
+  setOnboardingView(null);
+  renderAll();
+}
+
 function setActivePanel(panelName) {
+  if (state.onboardingView) {
+    return;
+  }
   const resolvedPanel = panelName || "checklist";
   state.activePanel = resolvedPanel;
   const isChecklist = resolvedPanel === "checklist";
@@ -1129,10 +1407,11 @@ function renderCalendar() {
         const entry = task ? getTaskEntry(task, record) : { checked: false };
         if (task && isTaskComplete(task, entry)) {
           cell.classList.add("done");
-          count.textContent = "Done";
+          count.innerHTML =
+            '<svg class="calendar-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.4 4.4L19 7.3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         } else {
           cell.classList.add("missed");
-          count.textContent = "Missed";
+          count.textContent = "";
         }
       }
     } else {
@@ -1300,6 +1579,9 @@ function addTask(title, emoji, type, goal) {
 }
 
 function renderAll() {
+  if (state.onboardingView) {
+    return;
+  }
   renderToday();
   renderTaskManager();
   renderTaskFilter();
@@ -1365,6 +1647,9 @@ function handleSettingsName(event) {
 
 function handleSettingsTheme(event) {
   updateSettings({ themeColor: event.target.value });
+  if (dom.themeColorPreview) {
+    dom.themeColorPreview.style.background = normalizeHex(event.target.value);
+  }
 }
 
 function handleSettingsEmoji(event) {
@@ -1414,6 +1699,19 @@ function handleGoToday() {
   renderToday();
 }
 
+function handleResetAppData() {
+  const confirmed = window.confirm(
+    "Delete all Lora Tracker data from this browser? This cannot be undone."
+  );
+  if (!confirmed) {
+    return;
+  }
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("lora."))
+    .forEach((key) => localStorage.removeItem(key));
+  window.location.reload();
+}
+
 function setRandomEncouragement() {
   const randomIndex = Math.floor(Math.random() * encouragements.length);
   dom.encouragementText.textContent = encouragements[randomIndex];
@@ -1428,7 +1726,6 @@ function registerServiceWorker() {
 }
 
 function init() {
-  seedTasks();
   setRandomEncouragement();
   applySettings(loadSettings());
   setupEmojiSelect(dom.taskEmoji, DEFAULT_EMOJI);
@@ -1438,7 +1735,20 @@ function init() {
   if (dom.taskGoalWrap) {
     dom.taskGoalWrap.hidden = true;
   }
-  renderAll();
+
+  if (!loadOnboarding() && hasStoredData()) {
+    saveOnboarding("legacy");
+  }
+
+  const onboarding = loadOnboarding();
+  if (!onboarding || !onboarding.completed) {
+    setOnboardingView("choice");
+  } else {
+    if (onboarding.mode === "lora") {
+      seedTasks();
+    }
+    renderAll();
+  }
 
   dom.taskForm.addEventListener("submit", handleFormSubmit);
   dom.prevMonth.addEventListener("click", () => handleMonthChange(-1));
@@ -1448,6 +1758,9 @@ function init() {
   dom.nextDay.addEventListener("click", () => handleDayChange(1));
   if (dom.goToday) {
     dom.goToday.addEventListener("click", handleGoToday);
+  }
+  if (dom.resetAppData) {
+    dom.resetAppData.addEventListener("click", handleResetAppData);
   }
   dom.menuToggle.addEventListener("click", handleMenuToggle);
   dom.menuItems.forEach((item) =>
@@ -1468,6 +1781,18 @@ function init() {
   }
   if (dom.taskType) {
     dom.taskType.addEventListener("change", handleTaskTypeChange);
+  }
+  if (dom.setupScratch) {
+    dom.setupScratch.addEventListener("click", handleSetupScratch);
+  }
+  if (dom.setupLora) {
+    dom.setupLora.addEventListener("click", handleSetupLora);
+  }
+  if (dom.setupSubmit) {
+    dom.setupSubmit.addEventListener("click", handleSetupSubmit);
+  }
+  if (dom.setupThemeColor) {
+    dom.setupThemeColor.addEventListener("input", handleSetupThemeColor);
   }
 
   registerServiceWorker();

@@ -1,4 +1,4 @@
-const CACHE_NAME = "lora-tracker-v1";
+const CACHE_NAME = "lora-tracker-v2";
 const ASSETS = [
   "./",
   "index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
   "app.js",
   "manifest.webmanifest",
   "assets/icon.svg",
+  "assets/icon-check.svg",
 ];
 
 self.addEventListener("install", (event) => {
