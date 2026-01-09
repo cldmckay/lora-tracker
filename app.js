@@ -37,7 +37,7 @@ const TASK_TYPE_LABELS = {
 const TASK_PRESETS = [
   { title: "10,000 Steps", type: TASK_TYPES.goal, goal: 10000 },
   { title: "100g Protein", type: TASK_TYPES.goal, goal: 100 },
-  { title: "100 Reps", type: TASK_TYPES.goal, goal: 100 },
+  { title: "100 Reps", type: TASK_TYPES.checkboxText, goal: null },
   { title: "Attend Class", type: TASK_TYPES.checkboxText, goal: null },
 ];
 
