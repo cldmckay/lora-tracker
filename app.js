@@ -576,13 +576,6 @@ function updateManifest(settings) {
   }
   const safeName = settings.appName?.trim() || DEFAULT_SETTINGS.appName;
   const safeTheme = normalizeHex(settings.themeColor);
-  const onboarding = loadOnboarding();
-  let iconSrc = "assets/icon.svg";
-  if (onboarding?.mode === "scratch") {
-    const svg = buildCheckIconSvg(safeTheme);
-    const encodedSvg = encodeURIComponent(svg);
-    iconSrc = `data:image/svg+xml;charset=UTF-8,${encodedSvg}`;
-  }
   const manifest = {
     name: safeName,
     short_name: safeName,
@@ -593,9 +586,9 @@ function updateManifest(settings) {
     theme_color: safeTheme,
     icons: [
       {
-        src: iconSrc,
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "assets/icon.png",
+        sizes: "1024x1024",
+        type: "image/png",
         purpose: "any maskable",
       },
     ],

@@ -1,24 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Lora Tracker">
   <defs>
-    <linearGradient id="pink" x1="0" x2="1" y1="0" y2="1">
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0%" stop-color="#ff2d8f" />
       <stop offset="100%" stop-color="#ff8fc7" />
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="120" fill="url(#pink)" />
+  <rect width="512" height="512" rx="120" fill="url(#bg)" />
   <path
-    d="M256 366c-60-44-108-88-108-140 0-40 26-70 66-70 20 0 36 9 42 21 6-12 22-21 42-21 40 0 66 30 66 70 0 52-48 96-108 140z"
-    fill="#fff"
+    d="M120 212l36-88 100 52 100-52 36 88v68c0 96-72 168-172 168s-172-72-172-168v-68z"
+    fill="#ff8f3f"
+  />
+  <path
+    d="M156 140l44-20 36 34-56 32-24-46zM356 140l-44-20-36 34 56 32 24-46z"
+    fill="#ffc46b"
+  />
+  <path
+    d="M174 244c0 44 36 80 82 80s82-36 82-80v-34H174v34z"
+    fill="#fff3e2"
+  />
+  <path
+    d="M210 250a16 16 0 1 0 32 0 16 16 0 0 0-32 0zm60 0a16 16 0 1 0 32 0 16 16 0 0 0-32 0z"
+    fill="#3b1a10"
+  />
+  <path
+    d="M256 288l-18 12 18 20 18-20-18-12z"
+    fill="#3b1a10"
+  />
+  <path
+    d="M154 214c16-38 54-64 102-64s86 26 102 64v26H154v-26z"
+    fill="#ff5fa8"
+  />
+  <path
+    d="M176 214c14-28 44-46 80-46s66 18 80 46v12H176v-12z"
+    fill="#ff9bd0"
     opacity="0.9"
   />
-  <text
-    x="256"
-    y="270"
-    text-anchor="middle"
-    font-size="120"
-    font-family="Cooper Black, Georgia, serif"
-    fill="#2c102f"
-  >
-    LT
-  </text>
 </svg>
